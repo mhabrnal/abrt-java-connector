@@ -335,7 +335,7 @@ int main(int argc, char *argv[])
     {
         hash_str = sr_thread_get_duphash(crash_thread, FRAMES_FOR_DUPHASH,
                 /*noprefix*/NULL, SR_DUPHASH_NOHASH);
-        log("Generating duphash from string: '%s'", hash_str);
+        log_warning("Generating duphash from string: '%s'", hash_str);
         free(hash_str);
     }
 

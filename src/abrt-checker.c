@@ -630,6 +630,116 @@ static void add_additional_info_data(problem_data_t *pd, T_infoPair *additional_
 
 
 /*
+ * Escape newline chars in str.
+ * Returns allocated char* (should be freed).
+ */
+static char *escape_newline_chars(const char *str)
+{
+    char *ptr = NULL;
+    size_t sizeloc = 0;
+    FILE *mem = open_memstream(&ptr, &sizeloc);
+    if (NULL == mem)
+    {
+        perror("ERROR: failed to open memstream");
+        return xasprintf("Error in abrt-java-connector: failed to open memstream");
+    }
+
+    for (int i = 0; str[i] != '\0'; ++i)
+    {
+        if (str[i] == '\n')
+            fputs("\\n", mem);
+        else
+            fputc(str[i], mem);
+    }
+    fclose(mem);
+
+    return ptr;
+}
+
+
+
+/*
+ * Create JSON msg containing exception information and send it to
+ * container-exception-logger tool
+ */
+static void write_to_cel(
+        const char *executable,
+        const char *message,
+        const char *backtrace)
+{
+    char uid[11];
+    get_uid_as_string(uid);
+
+    char *bt_escaped_newline = escape_newline_chars(backtrace);
+
+    char *json = xasprintf("{\"%s\": \"%s\", "
+                            "\"%s\": \"%s\", "
+                            "\"%s\": \"%s\", "
+                            "\"%s\": \"%s\", "
+                            "\"%s\": \"%s\", "
+                            "\"%s\": \"%s\"}\n",
+                            FILENAME_TYPE, FILENAME_TYPE_VALUE, /* type */
+                            FILENAME_EXECUTABLE, executable, /* executable */
+                            FILENAME_REASON, message, /* reason */
+                            FILENAME_BACKTRACE, bt_escaped_newline, /* backtrace */
+                            FILENAME_UID, uid, /* uid */
+                            "abrt-java-connector", VERSION);
+
+    free(bt_escaped_newline);
+
+    VERBOSE_PRINT("CEL JSON message: %s\n", json);
+
+    int fd[2];
+    if(pipe(fd))
+    {
+        perror("ERROR: failed to create a pipe for CEL reporting");
+        return;
+    }
+
+    pid_t pid = fork();
+    if (pid < 0)
+    {
+        perror("ERROR: failed to fork");
+        return;
+    }
+
+    /* child */
+    if (pid == 0)
+    {
+        close(fd[1]);
+        int d = dup2(fd[0], STDIN_FILENO);
+        if ( d < 0 )
+        {
+            perror("ERROR: failed to duplicate a file descriptor");
+            exit(EXIT_FAILURE);
+        }
+
+        execl("/usr/bin/container-exception-logger", "container-exception-logger", NULL);
+
+        exit(EXIT_FAILURE);
+    }
+    /* parent */
+    else
+    {
+        close(fd[0]);
+        int n = write(fd[1], json, strlen(json));
+        if (n < 0)
+            perror("ERROR: failed to write to container-exception-logger");
+
+        VERBOSE_PRINT("number of bytes written to the container-exception-logger: %d\n", n);
+
+        close(fd[1]); /* close file descriptor for writing */
+        wait(NULL);
+    }
+
+    free(json);
+
+    return;
+}
+
+
+
+/*
  * Register new ABRT event using given message and a method name.
  * If reportErrosTo global flags doesn't contain ED_ABRT, this function does nothing.
  */
@@ -703,6 +813,12 @@ static void report_stacktrace(
 
     }
 #endif
+
+    if (globalConfig.reportErrosTo & ED_CEL)
+    {
+        VERBOSE_PRINT("Reporting stack trace to container-exception-logger");
+        write_to_cel(executable, message, stacktrace ? stacktrace : "no stack trace");
+    }
 
     log_print("%s\n", message);
 

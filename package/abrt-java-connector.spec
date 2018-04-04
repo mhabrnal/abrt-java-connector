@@ -27,6 +27,17 @@ Requires:	abrt
 JNI library providing an agent capable to process both caught and uncaught
 exceptions and transform them to ABRT problems
 
+%package container
+Summary: JNI Agent library converting Java exceptions to ABRT problems (minimal version)
+Requires: container-exception-logger
+conflicts: %{name}
+
+%description container
+JNI library providing an agent capable to process both caught and uncaught
+exceptions and transform them to ABRT problems
+
+This package contains only minimal set of files needed for container exception
+logging.
 
 %prep
 %setup -qn %{name}-%{commit}
@@ -41,7 +52,8 @@ make %{?_smp_mflags}
 make install DESTDIR=%{buildroot}
 
 %files
-%doc LICENSE README AUTHORS
+%doc README AUTHORS
+%license LICENSE
 %config(noreplace) %{_sysconfdir}/libreport/plugins/bugzilla_format_java.conf
 %config(noreplace) %{_sysconfdir}/libreport/plugins/bugzilla_formatdup_java.conf
 %config(noreplace) %{_sysconfdir}/libreport/events.d/java_event.conf
@@ -53,6 +65,16 @@ make install DESTDIR=%{buildroot}
 %{_mandir}/man5/bugzilla_formatdup_java.conf.5*
 %{_datadir}/abrt/conf.d/plugins/java.conf
 
+# Applications may use a single subdirectory under/usr/lib.
+# http://www.pathname.com/fhs/pub/fhs-2.3.html#PURPOSE22
+#
+# Java does not support multilib.
+# https://fedorahosted.org/fesco/ticket/961
+%{_prefix}/lib/abrt-java-connector
+
+%files container
+%doc README AUTHORS
+%license LICENSE
 # Applications may use a single subdirectory under/usr/lib.
 # http://www.pathname.com/fhs/pub/fhs-2.3.html#PURPOSE22
 #

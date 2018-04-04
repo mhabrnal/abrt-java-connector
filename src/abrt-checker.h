@@ -67,6 +67,7 @@ typedef enum {
     ED_ABRT     = ED_TERMINAL << 1, ///< Submit error reports to ABRT
     ED_SYSLOG   = ED_ABRT << 1,     ///< Submit error reports to syslog
     ED_JOURNALD = ED_SYSLOG << 1,   ///< Submit error reports to journald
+    ED_CEL      = ED_JOURNALD << 1, ///< Submit error reports to container-exception-logger
 } T_errorDestination;
 
 

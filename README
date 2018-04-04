@@ -95,7 +95,7 @@ $  java -agentlib:abrt-java-connector=journald=off $MyClass -platform.jvmtiSuppo
 - enable syslog
 $  java -agentlib:abrt-java-connector=syslog=on $MyClass -platform.jvmtiSupported true
 
-Example5:
+Example6:
 - this example shows how to configure abrt-java-connector to fill 'executable'
   ABRT file with a path to a class on the bottom of the stack trace (the first
   method of thread)
@@ -108,7 +108,7 @@ $  java -agentlib:abrt-java-connector=executable=threadclass $MyClass -platform.
   file is filled with full path $MyClass
 
 
-Example6:
+Example7:
 - this example shows how to enrich the exception report with extra debug information
 - abrt-java-connector is capable to call a static method returning String at
   time of processing exception
@@ -119,13 +119,21 @@ Example6:
 $  java -agentlib:abrt-java-connector=debugmethod=com.example.$MyClass.getMethod $MyClass
 
 
-Example7:
+Example8:
 - this example shows how to change the path to configuration file
 - the default configuration file path is '/etc/abrt/plugins/java.conf'
 - empty 'conffile' option means do not read any configuration file
 
 
 $  java -agentlib:abrt-java-connector=conffile=/etc/foo/example.conf $MyClass
+
+
+Example9:
+- this example shows how to enable reporting errors to container-exception-logger (cel)
+- cel gets enabled by passing option 'cel' with value 'on'
+- container-exception-logger has to be installed in a container
+
+$  java -agentlib:abrt-java-connector=cel=on $MyClass -platform.jvmtiSupported true
 
 
 Building from sources

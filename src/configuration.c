@@ -18,6 +18,7 @@ enum {
     OPT_executable   = 1 << 5,
     OPT_conffile     = 1 << 6,
     OPT_debugmethod  = 1 << 7,
+    OPT_cel          = 1 << 8,
 };
 
 
@@ -148,6 +149,19 @@ static int parse_option_abrt(T_configuration *conf, const char *value, T_context
     {
         VERBOSE_PRINT("Enabling errors reporting to ABRT\n");
         conf->reportErrosTo |= ED_ABRT;
+    }
+
+    return 0;
+}
+
+
+
+static int parse_option_cel(T_configuration *conf, const char *value, T_context *context __UNUSED_VAR)
+{
+    if (value != NULL && (strcasecmp("on", value) == 0 || strcasecmp("yes", value) == 0))
+    {
+        VERBOSE_PRINT("Enabling errors reporting to container-exception-logger\n");
+        conf->reportErrosTo |= ED_CEL;
     }
 
     return 0;
@@ -311,6 +325,7 @@ static void parse_key_value(T_configuration *conf, const char *key, const char *
         { OPT_executable, "executable", parse_option_executable },
         { OPT_conffile, "conffile", parse_option_conffile },
         { OPT_debugmethod, "debugmethod", parse_option_debugmethod },
+        { OPT_cel, "cel", parse_option_cel },
     };
 
     for (size_t i = 0; i < sizeof(arguments)/sizeof(arguments[0]); ++i)

@@ -630,10 +630,10 @@ static void add_additional_info_data(problem_data_t *pd, T_infoPair *additional_
 
 
 /*
- * Escape newline chars in str.
+ * Escape newline and quotation mark chars in str.
  * Returns allocated char* (should be freed).
  */
-static char *escape_newline_chars(const char *str)
+static char *escape_special_chars(const char *str)
 {
     char *ptr = NULL;
     size_t sizeloc = 0;
@@ -648,6 +648,8 @@ static char *escape_newline_chars(const char *str)
     {
         if (str[i] == '\n')
             fputs("\\n", mem);
+        else if (str[i] == '"')
+            fputs("\"", mem);
         else
             fputc(str[i], mem);
     }
@@ -670,7 +672,7 @@ static void write_to_cel(
     char uid[11];
     get_uid_as_string(uid);
 
-    char *bt_escaped_newline = escape_newline_chars(backtrace);
+    char *bt_escaped_spec_chars = escape_special_chars(backtrace);
 
     char *json = xasprintf("{\"%s\": \"%s\", "
                             "\"%s\": \"%s\", "
@@ -681,11 +683,11 @@ static void write_to_cel(
                             FILENAME_TYPE, FILENAME_TYPE_VALUE, /* type */
                             FILENAME_EXECUTABLE, executable, /* executable */
                             FILENAME_REASON, message, /* reason */
-                            FILENAME_BACKTRACE, bt_escaped_newline, /* backtrace */
+                            FILENAME_BACKTRACE, bt_escaped_spec_chars, /* backtrace */
                             FILENAME_UID, uid, /* uid */
                             "abrt-java-connector", VERSION);
 
-    free(bt_escaped_newline);
+    free(bt_escaped_spec_chars);
 
     VERBOSE_PRINT("CEL JSON message: %s\n", json);
 
